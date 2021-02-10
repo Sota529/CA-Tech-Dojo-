@@ -1,6 +1,7 @@
 version: '3'
 services:
   go:
+    container_name: docker_Go
     build:
       context: .
       dockerfile: DockerFile
@@ -11,16 +12,22 @@ services:
       - .:/app
     ports:
       - 8080:8080
+    environment:
+      MYSQL_DATABASE: go_database
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_HOST: dockerMySQL  
     depends_on:
       - "db"
   
 
   db:
     image: mysql:8.0
+    container_name: docker_MySQL  # 追加!!
     environment:
-      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: go_database
       MYSQL_USER: user
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_PASSWORD: password
       TZ: 'Asia/Tokyo'
       
