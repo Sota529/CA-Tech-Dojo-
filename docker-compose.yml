@@ -26,7 +26,8 @@ services:
       MYSQL_USER: go_test
       MYSQL_PASSWORD: password
       TZ: 'Asia/Tokyo'
-      
+    cap_add:
+      - SYS_NICE
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - db-data:/var/lib/mysql

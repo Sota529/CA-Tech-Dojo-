@@ -16,9 +16,10 @@ type User struct {
   }
 
 func main() {
-  db := sqlConnect()
+    db := sqlConnect()
   db.AutoMigrate(&User{})
   defer db.Close()
+
 
   router := gin.Default()
 
@@ -46,7 +47,7 @@ func sqlConnect() (database *gorm.DB) {
 
   count := 0
   db, err := gorm.Open(DBMS, CONNECT)
-  
+
 //   30秒接続できなかったら接続失敗と出る処理
   if err != nil {
     for {
