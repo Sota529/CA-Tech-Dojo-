@@ -12,8 +12,12 @@ import (
 
 
 func main() {
-  fmt.Println("Ha")
   db := sqlConnect()
+  db.AutoMigrate(
+    &model.User{},
+)
+  fmt.Println("テーブル作成！")
+
   defer db.Close()
 
   router := gin.Default()
@@ -46,6 +50,7 @@ func main() {
 
 // mysql接続関数
 func sqlConnect() (database *gorm.DB) {
+ fmt.Println("接続開始")
   db, err := gorm.Open("mysql", "go_test:password@tcp(db:3306)/go_database?charset=utf8&parseTime=True&loc=Local")
 if err != nil {
     panic(err)
@@ -59,12 +64,11 @@ db.LogMode(true)
 if err := db.DB().Ping(); err != nil {
     panic(err)
 }
+fmt.Println("接続成功")
 
 db.AutoMigrate(
     &model.User{},
 )
+
   return db
 }
-
-
-
