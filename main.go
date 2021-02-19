@@ -5,7 +5,7 @@ import (
 	"CA_MISSION/model"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
+    _ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/jinzhu/gorm"
 )
 
@@ -13,13 +13,14 @@ import (
 
 func main() {
   db := sqlConnect()
-  db.AutoMigrate(
-    &model.User{},
-)
-  fmt.Println("テーブル作成！")
-
+  fmt.Println(db.HasTable("users"))
+//   db.AutoMigrate(&model.User{})
+  db.CreateTable(&model.User{})
+  
+  //   if db.HasTable("users") == false {
+    // db.CreateTable(&model.User{})
+//   }
   defer db.Close()
-
   router := gin.Default()
 
 // GETメソッド
@@ -29,14 +30,11 @@ func main() {
 // POSTメソッド
   router.POST("/user/create", func(ctx *gin.Context){
     db := sqlConnect()
-    id :=ctx.PostForm("id")
-    name := ctx.PostForm("name")
-    fmt.Println(name)
-    mail := ctx.PostForm("mail")
-    fmt.Println(name +"user Created!"+mail+"Mail")
-    db.Create(&model.User{Name: name, Mail: mail})
+    // db.Table("users").Raw("SELECT name, mail FROM users WHERE name = ?", "Antonio")
+    fmt.Println( "user Created! ")
+    // db.Create(&model.User{Name: name, Mail: mail})
     ctx.JSON(200, gin.H{
-      "token":id,
+      "token":"Hi",
     })
     defer db.Close()
 })
@@ -55,20 +53,6 @@ func sqlConnect() (database *gorm.DB) {
 if err != nil {
     panic(err)
 }
-defer func() {
-    if err := db.Close(); err != nil {
-        panic(err)
-    }
-}()
-db.LogMode(true)
-if err := db.DB().Ping(); err != nil {
-    panic(err)
-}
 fmt.Println("接続成功")
-
-db.AutoMigrate(
-    &model.User{},
-)
-
   return db
 }
