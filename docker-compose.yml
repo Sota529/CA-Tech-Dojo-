@@ -12,11 +12,6 @@ services:
       - .:/app
     ports:
       - 8080:8080
-    environment:
-      MYSQL_DATABASE: go_database
-      MYSQL_HOST: docker_MySQL  
-      MYSQL_USER: go_test
-      MYSQL_PASSWORD: password
     depends_on:
       - "db"
 
