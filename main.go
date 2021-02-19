@@ -14,8 +14,10 @@ import (
 func main() {
   db := sqlConnect()
   fmt.Println(db.HasTable("users"))
-  db.AutoMigrate(&model.User{},)
-//   db.CreateTable(&model.User{})
+//   db.DropTable("users")
+  fmt.Println(db.HasTable("users"))
+    db.AutoMigrate(&model.User{},)
+  fmt.Println(db.HasTable("users"))
   
   //   if db.HasTable("users") == false {
     // db.CreateTable(&model.User{})
@@ -28,20 +30,20 @@ func main() {
     var json model.User
     db := sqlConnect()
     ctx.JSON(200, gin.H{
-        "data":db.First(&json),
+        "data":db.Find(&json),
     })
-    fmt.Println("user got!")
-    defer db.Close()
+       defer db.Close()
 })
 // POSTメソッド
   router.POST("/user/create", func(ctx *gin.Context){
     var json model.User
     db := sqlConnect()
-    db.Select("Name").Create(&json)
-    if err := ctx.ShouldBindJSON(&json); err != nil {
+    if err := ctx.ShouldBindJSON(&json);
+    err != nil {
         ctx.JSON(400, gin.H{"error": err.Error()})
         return
     }
+    db.Select("Name","Mail").Create(&json)
     ctx.JSON(200, gin.H{
       "token":json.Name,
     })
