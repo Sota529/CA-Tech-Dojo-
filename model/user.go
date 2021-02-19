@@ -1,10 +1,10 @@
 package model
 
 import (
-	"github.com/jinzhu/gorm"
+	// "github.com/jinzhu/gorm"
 )
 type User struct {
-	gorm.Model 
-  Name string 	
-	Mail string 
+	id uint 
+  Name string 	`json:"name"`
+	Mail string    `json:"mail"`
 }
