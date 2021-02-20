@@ -9,19 +9,9 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-
-
 func main() {
   db := sqlConnect()
-  fmt.Println(db.HasTable("users"))
-//   db.DropTable("users")
-  fmt.Println(db.HasTable("users"))
-    db.AutoMigrate(&model.User{},)
-  fmt.Println(db.HasTable("users"))
-  
-  //   if db.HasTable("users") == false {
-    // db.CreateTable(&model.User{})
-//   }
+  db.AutoMigrate(&model.User{},)
   defer db.Close()
   router := gin.Default()
 
@@ -29,8 +19,10 @@ func main() {
   router.GET("/user/get", func(ctx *gin.Context){
     var json model.User
     db := sqlConnect()
+    token :=ctx.Request.Header.Get("x-token")
+    response :=db.Where("Mail=?",token).Find(&json)
     ctx.JSON(200, gin.H{
-        "data":db.Find(&json),
+        "data":response,
     })
        defer db.Close()
 })
@@ -45,13 +37,25 @@ func main() {
     }
     db.Select("Name","Mail").Create(&json)
     ctx.JSON(200, gin.H{
-      "token":json.Name,
+      "token":json.Mail,
     })
     defer db.Close()
 })
 // PUTメソッド
   router.PUT("/user/update", func(ctx *gin.Context){
-    fmt.Println("user updated!")
+    var json model.User
+    db := sqlConnect()
+    token :=ctx.Request.Header.Get("x-token")
+    if err := ctx.ShouldBindJSON(&json);
+    err != nil {
+        ctx.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+    db.Model(&json).Where("Mail=?",token).Update("name", json.Name)
+    ctx.JSON(200, gin.H{
+        "name":json.Name+"に変更されました",
+    })
+    defer db.Close()
 })
   
   router.Run()
