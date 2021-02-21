@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+  "time"
+  "math/rand"
 	"CA_MISSION/model"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +13,7 @@ import (
 
 func main() {
   db := sqlConnect()
+  db.DropTable(&model.User{})
   db.AutoMigrate(&model.User{},)
   defer db.Close()
   router := gin.Default()
@@ -27,6 +30,7 @@ func main() {
        defer db.Close()
 })
 // POSTメソッド
+//--------------user--------------------------------//
   router.POST("/user/create", func(ctx *gin.Context){
     var json model.User
     db := sqlConnect()
@@ -35,23 +39,53 @@ func main() {
         ctx.JSON(400, gin.H{"error": err.Error()})
         return
     }
-    db.Select("Name","Mail").Create(&json)
+    db.Create(&json)
     ctx.JSON(200, gin.H{
       "token":json.Mail,
     })
     defer db.Close()
 })
+//-----------------user-----------------------//
+//-----------------gacha-----------------------//
+router.POST("/gacha/draw", func(ctx *gin.Context){
+  // var json model.Character
+  var gacha model.Gacha
+  if err := ctx.ShouldBindJSON(&gacha);
+  err != nil {
+      ctx.JSON(400, gin.H{"error": err.Error()})
+      return
+  }
+  //rand.Intn()にはつくったキャラの数をいれる。
+  rand.Seed(time.Now().UnixNano())
+  for i:=0;i<gacha.Time;i++{
+    fmt.Println(rand.Intn(5))
+  }
+  // db := sqlConnect()
+  // if err := ctx.ShouldBindJSON(&json);
+  // err != nil {
+  //     ctx.JSON(400, gin.H{"error": err.Error()})
+  //     return
+  // }
+  // db.Select("CharacterID","Name").Create(&json)
+  // ctx.JSON(200, gin.H{
+  //   "characterID":json.CharacterID,
+  //   "name":json.Name,
+  // })
+  // defer db.Close()
+})
+//-----------------gacha-----------------------//
 // PUTメソッド
-  router.PUT("/user/update", func(ctx *gin.Context){
-    var json model.User
-    db := sqlConnect()
-    token :=ctx.Request.Header.Get("x-token")
-    if err := ctx.ShouldBindJSON(&json);
-    err != nil {
+router.PUT("/user/update", func(ctx *gin.Context){
+  var json model.User
+  db := sqlConnect()
+  token :=ctx.Request.Header.Get("x-token")
+  if err := ctx.ShouldBindJSON(&json);
+  err != nil {
         ctx.JSON(400, gin.H{"error": err.Error()})
         return
     }
-    db.Model(&json).Where("Mail=?",token).Update("name", json.Name)
+    db.Model(&json).Update("name", json.Name).Where("Mail=?",token)
+    db.Save(&json)
     ctx.JSON(200, gin.H{
         "name":json.Name+"に変更されました",
     })
