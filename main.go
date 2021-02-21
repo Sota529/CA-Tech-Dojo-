@@ -19,63 +19,50 @@ func main() {
   router := gin.Default()
 
 // GETメソッド
-  router.GET("/user/get", func(ctx *gin.Context){
-    var json model.User
-    db := sqlConnect()
-    token :=ctx.Request.Header.Get("x-token")
-    response :=db.Where("Mail=?",token).Find(&json)
-    ctx.JSON(200, gin.H{
-        "data":response,
-    })
-       defer db.Close()
-})
+  router.GET("/user/get",UserGet )
+
 // POSTメソッド
 //--------------user--------------------------------//
-  router.POST("/user/create", func(ctx *gin.Context){
-    var json model.User
-    db := sqlConnect()
-    if err := ctx.ShouldBindJSON(&json);
-    err != nil {
-        ctx.JSON(400, gin.H{"error": err.Error()})
-        return
-    }
-    db.Create(&json)
-    ctx.JSON(200, gin.H{
-      "token":json.Mail,
-    })
-    defer db.Close()
-})
-//-----------------user-----------------------//
+  router.POST("/user/create", UserPost)
+
 //-----------------gacha-----------------------//
-router.POST("/gacha/draw", func(ctx *gin.Context){
-  // var json model.Character
-  var gacha model.Gacha
-  if err := ctx.ShouldBindJSON(&gacha);
+router.POST("/gacha/draw", CharaPost)
+
+// PUTメソッド
+router.PUT("/user/update",UserPut)
+  
+  router.Run()
+}
+
+//Userを作成する関数
+func UserPost (ctx *gin.Context){
+  var json model.User
+  db := sqlConnect()
+  if err := ctx.ShouldBindJSON(&json);
   err != nil {
       ctx.JSON(400, gin.H{"error": err.Error()})
       return
   }
-  //rand.Intn()にはつくったキャラの数をいれる。
-  rand.Seed(time.Now().UnixNano())
-  for i:=0;i<gacha.Time;i++{
-    fmt.Println(rand.Intn(5))
-  }
-  // db := sqlConnect()
-  // if err := ctx.ShouldBindJSON(&json);
-  // err != nil {
-  //     ctx.JSON(400, gin.H{"error": err.Error()})
-  //     return
-  // }
-  // db.Select("CharacterID","Name").Create(&json)
-  // ctx.JSON(200, gin.H{
-  //   "characterID":json.CharacterID,
-  //   "name":json.Name,
-  // })
-  // defer db.Close()
-})
-//-----------------gacha-----------------------//
-// PUTメソッド
-router.PUT("/user/update", func(ctx *gin.Context){
+  db.Create(&json)
+  ctx.JSON(200, gin.H{
+    "token":json.Mail,
+  })
+  defer db.Close()
+}
+
+// Userを表示する関数
+func UserGet (ctx *gin.Context){
+  var json model.User
+  db := sqlConnect()
+  token :=ctx.Request.Header.Get("x-token")
+  response :=db.Where("Mail=?",token).Find(&json)
+  ctx.JSON(200, gin.H{
+      "data":response,
+  })
+     defer db.Close()
+}
+//Userを更新する関数
+func UserPut (ctx *gin.Context){
   var json model.User
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
@@ -84,15 +71,34 @@ router.PUT("/user/update", func(ctx *gin.Context){
         ctx.JSON(400, gin.H{"error": err.Error()})
         return
     }
-    db.Model(&json).Update("name", json.Name).Where("Mail=?",token)
-    db.Save(&json)
+    db.Model(&json).Where("mail=?",token).Update("name", json.Name)
     ctx.JSON(200, gin.H{
         "name":json.Name+"に変更されました",
     })
     defer db.Close()
-})
+} 
+
+//ガチャPost関数
+func CharaPost (ctx *gin.Context){
+  var gacha model.Gacha
+  if err := ctx.ShouldBindJSON(&gacha);
+  err != nil {
+      ctx.JSON(400, gin.H{"error": err.Error()})
+      return
+  }
+  //rand.Intn()にはつくったキャラの数をいれる。
+  rand.Seed(time.Now().UnixNano())
+  db := sqlConnect()
+  for i:=0;i<gacha.Time;i++{
+    fmt.Println((db.Exec("SELECT name FROM users WHERE name = ?",1)))
+    rand.Intn(5)
+  }
+  // token :=ctx.Request.Header.Get("x-token")
+  // response :=db.Where("Mail=?",token).Find(&json)
   
-  router.Run()
+
+ 
+  defer db.Close()
 }
 
 // mysql接続関数
