@@ -9,7 +9,8 @@ type Gacha struct{
 }
 
 type Character struct {
-	CharacterID uint `gorm:"unique;not null;PRIMARY_KEY;autoIncrement"`
+	ID uint `gorm:"unique;not null;PRIMARY_KEY;autoIncrement"`
   Name string 	`gorm:"not null;PRIMARY_KEY" `
+	Percent string `gorm:"not null;`
 }
 

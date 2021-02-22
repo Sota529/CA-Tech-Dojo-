@@ -1,16 +1,18 @@
 package main
 
 import (
-	"fmt"
-  "time"
-  "math/rand"
 	"CA_MISSION/model"
+	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/gin-gonic/gin"
-    _ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
-
+var user model.User
+var gacha model.Gacha
+var character model.Character
 func main() {
   db := sqlConnect()
   db.DropTable(&model.User{})//初期化
@@ -19,7 +21,6 @@ func main() {
   CharaCreate()
   defer db.Close()
   router := gin.Default()
-
 // GETメソッド
 router.GET("/user/get",UserGet)
 
@@ -35,26 +36,26 @@ router.Run()
 
 //Userを作成する関数
 func UserPost (ctx *gin.Context){
-  var json model.User
+  var user model.User
   db := sqlConnect()
-  if err := ctx.ShouldBindJSON(&json);
+  if err := ctx.ShouldBindJSON(&user);
   err != nil {
       ctx.JSON(400, gin.H{"error": err.Error()})
       return
   }
-  db.Create(&json)
+  db.Create(&user)
   ctx.JSON(200, gin.H{
-    "token":json.Mail,
+    "token":user.Mail,
   })
   defer db.Close()
 }
 
 // Userを表示する関数
 func UserGet (ctx *gin.Context){
-  var json model.User
+  var user= model.User{}
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
-  response :=db.Where("Mail=?",token).Find(&json)
+  response :=  db.Where("mail = ?", token).First(&user)
   ctx.JSON(200, gin.H{
       "data":response,
   })
@@ -63,59 +64,61 @@ func UserGet (ctx *gin.Context){
 
 //Userを更新する関数
 func UserPut (ctx *gin.Context){
-  var json model.User
+  var user model.User
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
-  if err := ctx.ShouldBindJSON(&json);
+  if err := ctx.ShouldBindJSON(&user);
   err != nil {
         ctx.JSON(400, gin.H{"error": err.Error()})
         return
     }
-    db.Model(&json).Where("mail=?",token).Update("name", json.Name)
+    db.Model(&user).Where("mail=?",token).Update("name", user.Name)
     ctx.JSON(200, gin.H{
-        "name":json.Name+"に変更されました",
+        "name":user.Name+"に変更されました",
     })
     defer db.Close()
 } 
 
 //ガチャPost関数
 func CharaPost (ctx *gin.Context){
-  //userテーブル
-  var json model.User
-  //ガチャテーブル
-  var gacha model.Gacha
   rand.Seed(time.Now().UnixNano())
+  // token :=ctx.Request.Header.Get("x-token")
   if err := ctx.ShouldBindJSON(&gacha);
   err != nil {
     ctx.JSON(400, gin.H{"error": err.Error()})
     return
   }
-  db := sqlConnect()
   for i:=0;i<gacha.Time;i++{
     if gacha.Time >5{
-      fmt.Println(db.Model(json).Select("*").Joins("left join gacha on user.mail = gacha.token").Scan(&gacha))
+      // chance :=rand.Intn(100)
+      
+  //mysql からjsonみたいにむき出す
       
       
     }
-    fmt.Println((db.Exec("SELECT name FROM users WHERE name = ?",1)))
-    rand.Intn(100)
   }
-  
-  
-  
+}
+//characterテーブルからキャラを抽出しuserテーブルに挿入する関数
+func GetChara(token string , chance string){
+  db := sqlConnect()
+  fmt.Println(db.Where("Mail=?",token).Find(&user))
+  db.First(&character, token)
   defer db.Close()
 }
-
 //キャラクターテーブル生成
 func CharaCreate (){
   db := sqlConnect()
   db.AutoMigrate(&model.Character{})
-  charaName := []string{ "Doragon", "Dracula","Witch","Vampire","Ghost"}
-  for i :=0;i<len(charaName);i++{
+  charaNames :=[]string{"Doragon","Dracula","Witch","Vampire","Ghost"}
+  charaChance :=[]string{"20","50","70","90","100"}
+  for i :=0;i<len(charaNames);i++{
+  charaData := map[string]string{"Name":charaNames[i],"chance":charaChance[i]}
     db.Create(&model.Character{
-      Name:charaName[i],
+      Name:charaData["Name"],
+      Percent:charaData["chance"],
     })
   }
+  defer db.Close()
 }
 
 // mysql接続関数
