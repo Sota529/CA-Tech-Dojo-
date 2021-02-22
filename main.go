@@ -13,25 +13,24 @@ import (
 
 func main() {
   db := sqlConnect()
-  db.DropTable(&model.User{})
-  db.AutoMigrate(&model.User{},)
+  db.DropTable(&model.User{})//初期化
+  db.DropTable(&model.Character{})//初期化
+  db.AutoMigrate(&model.User{})
+  CharaCreate()
   defer db.Close()
   router := gin.Default()
 
 // GETメソッド
-  router.GET("/user/get",UserGet )
+router.GET("/user/get",UserGet)
 
 // POSTメソッド
-//--------------user--------------------------------//
-  router.POST("/user/create", UserPost)
-
-//-----------------gacha-----------------------//
+router.POST("/user/create", UserPost)
 router.POST("/gacha/draw", CharaPost)
 
 // PUTメソッド
 router.PUT("/user/update",UserPut)
   
-  router.Run()
+router.Run()
 }
 
 //Userを作成する関数
@@ -61,6 +60,7 @@ func UserGet (ctx *gin.Context){
   })
      defer db.Close()
 }
+
 //Userを更新する関数
 func UserPut (ctx *gin.Context){
   var json model.User
@@ -80,25 +80,42 @@ func UserPut (ctx *gin.Context){
 
 //ガチャPost関数
 func CharaPost (ctx *gin.Context){
+  //userテーブル
+  var json model.User
+  //ガチャテーブル
   var gacha model.Gacha
+  rand.Seed(time.Now().UnixNano())
   if err := ctx.ShouldBindJSON(&gacha);
   err != nil {
-      ctx.JSON(400, gin.H{"error": err.Error()})
-      return
+    ctx.JSON(400, gin.H{"error": err.Error()})
+    return
   }
-  //rand.Intn()にはつくったキャラの数をいれる。
-  rand.Seed(time.Now().UnixNano())
   db := sqlConnect()
   for i:=0;i<gacha.Time;i++{
+    if gacha.Time >5{
+      fmt.Println(db.Model(json).Select("*").Joins("left join gacha on user.mail = gacha.token").Scan(&gacha))
+      
+      
+    }
     fmt.Println((db.Exec("SELECT name FROM users WHERE name = ?",1)))
-    rand.Intn(5)
+    rand.Intn(100)
   }
-  // token :=ctx.Request.Header.Get("x-token")
-  // response :=db.Where("Mail=?",token).Find(&json)
   
-
- 
+  
+  
   defer db.Close()
+}
+
+//キャラクターテーブル生成
+func CharaCreate (){
+  db := sqlConnect()
+  db.AutoMigrate(&model.Character{})
+  charaName := []string{ "Doragon", "Dracula","Witch","Vampire","Ghost"}
+  for i :=0;i<len(charaName);i++{
+    db.Create(&model.Character{
+      Name:charaName[i],
+    })
+  }
 }
 
 // mysql接続関数
