@@ -55,7 +55,7 @@ func UserGet (ctx *gin.Context){
   var user= model.User{}
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
-  response :=  db.Where("mail = ?", token).First(&user)
+  response :=  db.Select("name").Where("mail = ?", token).First(&user)
   ctx.JSON(200, gin.H{
       "data":response,
   })
