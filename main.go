@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+  _ "github.com/go-sql-driver/mysql"
 )
 var user model.User
 var gacha model.Gacha
@@ -56,8 +56,9 @@ func UserGet (ctx *gin.Context){
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
   response :=  db.Select("name").Where("mail = ?", token).First(&user)
+  fmt.Println(response)
   ctx.JSON(200, gin.H{
-      "data":response,
+      "Name":user.Name,
   })
      defer db.Close()
 }
