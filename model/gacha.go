@@ -9,10 +9,11 @@ type Gacha struct{
 }
 type Post struct{
 	PostID uint `gorm:"not null"`
+	CharaID uint
 	Chara string 
 }
 type Result struct {
-  Name  string
+  CharaID  uint
   Chara string
 }
 

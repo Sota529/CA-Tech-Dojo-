@@ -114,6 +114,8 @@ func GetChara(token string , chance int){
       percent,_:=strconv.Atoi(character.Percent)
       if (chance >percent){
         db.Select("id").Where("mail=?",token).First(&user) 
+        db.Select("id").Where("percent=?", percent).Find(&character)
+        post.CharaID= character.ID
         post.PostID=user.ID
         post.Chara=character.Name
         db.Create(&post)
@@ -130,7 +132,7 @@ func CharaGet(ctx *gin.Context){
   db := sqlConnect()
   defer db.Close()
   token :=ctx.Request.Header.Get("x-token")
-  db.Select("users.name,posts.chara").Where("mail = ?", token).Joins("left join posts on posts.post_id = users.id").Find(&user).Scan(&result)
+  db.Select("posts.chara_id,posts.chara").Where("mail = ?", token).Joins("left join posts on posts.post_id = users.id").Find(&user).Scan(&result)
   
   ctx.JSON(200, gin.H{
       "characters":result,
