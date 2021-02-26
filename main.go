@@ -4,19 +4,21 @@ import (
 	"CA_MISSION/model"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-  _ "github.com/go-sql-driver/mysql"
 )
 var user model.User
-var gacha model.Gacha
 var character model.Character
+var gacha model.Gacha
 func main() {
   db := sqlConnect()
-  db.DropTable(&model.User{})//初期化
+  // db.DropTable(&model.User{})//初期化
   db.DropTable(&model.Character{})//初期化
+  db.DropTable(&model.Post{})//初期化
   db.AutoMigrate(&model.User{})
   CharaCreate()
   defer db.Close()
@@ -36,7 +38,7 @@ router.Run()
 
 //Userを作成する関数
 func UserPost (ctx *gin.Context){
-  var user model.User
+  var user= model.User{}
   db := sqlConnect()
   if err := ctx.ShouldBindJSON(&user);
   err != nil {
@@ -55,8 +57,7 @@ func UserGet (ctx *gin.Context){
   var user= model.User{}
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
-  response :=  db.Select("name").Where("mail = ?", token).First(&user)
-  fmt.Println(response)
+  db.Select("name").Where("mail = ?", token).First(&user)
   ctx.JSON(200, gin.H{
       "Name":user.Name,
   })
@@ -65,7 +66,7 @@ func UserGet (ctx *gin.Context){
 
 //Userを更新する関数
 func UserPut (ctx *gin.Context){
-  var user model.User
+  var user =model.User{}
   db := sqlConnect()
   token :=ctx.Request.Header.Get("x-token")
   if err := ctx.ShouldBindJSON(&user);
@@ -83,7 +84,9 @@ func UserPut (ctx *gin.Context){
 //ガチャPost関数
 func CharaPost (ctx *gin.Context){
   rand.Seed(time.Now().UnixNano())
-  // token :=ctx.Request.Header.Get("x-token")
+  token :=ctx.Request.Header.Get("x-token")
+  chance :=(rand.Intn(100))
+  GetChara(token ,chance)
   if err := ctx.ShouldBindJSON(&gacha);
   err != nil {
     ctx.JSON(400, gin.H{"error": err.Error()})
@@ -91,27 +94,46 @@ func CharaPost (ctx *gin.Context){
   }
   for i:=0;i<gacha.Time;i++{
     if gacha.Time >5{
-      // chance :=rand.Intn(100)
-      
-  //mysql からjsonみたいにむき出す
-      
-      
     }
   }
 }
 //characterテーブルからキャラを抽出しuserテーブルに挿入する関数
-func GetChara(token string , chance string){
+func GetChara(token string , chance int){
+  var user =model.User{}
+  var character =model.Character{}
+  var post = model.Post{}
   db := sqlConnect()
-  fmt.Println(db.Where("Mail=?",token).Find(&user))
-  db.First(&character, token)
+  db.AutoMigrate(&model.Post{})
+    m:= map[string]string{}
+    for  i:=1;i<=5;i++{
+      db.Select("name").Where("id=?", i).Find(&character) 
+      db.Select("percent").Where("id=?", i).Find(&character)
+      fmt.Println("Percendです")
+      fmt.Println(character.Percent)
+      fmt.Println("chanceです")
+      fmt.Println(chance)
+      percent,_:=strconv.Atoi(character.Percent)
+      if (chance >percent){
+        db.Select("id").Where("mail=?",token).First(&user) 
+        post.ID=user.ID
+        post.Chara=character.Name
+        db.Create(&post)
+        db.Model(&user).Select("users.name,posts.Chara").Joins("left join post on posts.id = users.id")
+        fmt.Println("postidです")
+        fmt.Println(post.ID)
+        fmt.Println(("postキャラです"))
+        fmt.Println(post.Chara)
+      }
+      m[character.Name]=character.Percent
+      }  
   defer db.Close()
 }
-//キャラクターテーブル生成
+//character生成
 func CharaCreate (){
   db := sqlConnect()
   db.AutoMigrate(&model.Character{})
   charaNames :=[]string{"Doragon","Dracula","Witch","Vampire","Ghost"}
-  charaChance :=[]string{"20","50","70","90","100"}
+  charaChance :=[]string{"100","90","70","40","20"}
   for i :=0;i<len(charaNames);i++{
   charaData := map[string]string{"Name":charaNames[i],"chance":charaChance[i]}
     db.Create(&model.Character{
