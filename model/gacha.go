@@ -8,13 +8,17 @@ type Gacha struct{
 	Token string `json:"token"`
 }
 type Post struct{
-	ID uint `gorm:"not null"`
+	PostID uint `gorm:"not null"`
 	Chara string 
+}
+type Result struct {
+  Name  string
+  Chara string
 }
 
 type Character struct {
 	ID uint `gorm:"unique;not null;PRIMARY_KEY;autoIncrement"`
-  Name string 	`gorm:"not null;PRIMARY_KEY"`
+  Name string 	`gorm:"not null"`
 	Percent string `gorm:"not null"`
 }
 
